@@ -1,11 +1,102 @@
 <!DOCTYPE html>
-<html>
+<html lang="sw">
 <head>
   <meta charset="UTF-8">
-  <title>Alfonce Pi App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Karibu Alfonce Pi App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f2f2f2;
+    }
+    h1 {
+      color: #333;
+    }
+    p {
+      color: #555;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #pi-balance {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
   <h1>Karibu Alfonce Pi App</h1>
   <p>App hii inafanya kazi ndani ya Pi Browser</p>
+
+  <!-- Buttons -->
+  <button onclick="loginPi()">Login na Pi</button>
+  <button onclick="payPi()">Pokea Pi</button>
+
+  <!-- Display Pi Balance -->
+  <div id="pi-balance">Balance: 0 Pi</div>
+
+  <!-- Pi SDK -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <script>
+    // Initialize Pi SDK
+    Pi.init({ version: "2.0" });
+
+    // Login function
+    function loginPi() {
+      Pi.authenticate(
+        ["username", "payments"],
+        function(auth) {
+          alert("Karibu, " + auth.user.username);
+          updateBalance(); // Update balance after login
+        },
+        function(error) {
+          alert("Login failed: " + error);
+        }
+      );
+    }
+
+    // Payment function
+    function payPi() {
+      Pi.requestPayment(
+        {
+          amount: 0.1, // change if needed
+          currency: "Pi",
+          memo: "Payment kwa Alfonce App"
+        },
+        function(success) {
+          alert("Payment success! Transaction ID: " + success.transaction_id);
+          updateBalance(); // Update balance after payment
+        },
+        function(error) {
+          alert("Payment failed: " + error);
+        }
+      );
+    }
+
+    // Function to update Pi balance display
+    function updateBalance() {
+      Pi.getUserBalance(
+        function(balance) {
+          document.getElementById("pi-balance").innerText = "Balance: " + balance + " Pi";
+        },
+        function(error) {
+          console.log("Failed to get balance: " + error);
+        }
+      );
+    }
+  </script>
 </body>
 </html>
