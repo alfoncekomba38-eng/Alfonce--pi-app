@@ -8,115 +8,71 @@
   <!-- Pi Network SDK -->
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
-  <!-- Pi App Metadata -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#7b3fe4">
-  <link rel="icon" href="icon.png" type="image/png">
-  <link rel="apple-touch-icon" href="icon.png">
-  <link rel="apple-touch-startup-image" href="splash.png">
-  <link rel="manifest" href="manifest.json">
-
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 0; text-align: center; }
-    .container { max-width: 450px; margin: 40px auto; padding: 20px; }
-    h1,h2,h3 { color:#7b3fe4; margin-bottom:10px; }
-    p { margin:5px 0; color:#555; }
-    button { width:100%; padding:14px; margin-top:10px; font-size:16px; background: linear-gradient(90deg,#7b3fe4,#9a63f8); color:white; border:none; border-radius:8px; cursor:pointer; transition:0.3s; font-weight:bold; }
-    button:hover { opacity:0.9; transform:scale(1.02); }
-    input { width:100%; padding:12px; margin-top:10px; font-size:16px; border-radius:6px; border:1px solid #ccc; outline:none; transition:0.2s; }
-    input:focus { border-color:#7b3fe4; box-shadow:0 0 5px #7b3fe4; }
-    .box { background:white; padding:25px; border-radius:12px; margin-top:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
-    .hidden { display:none; }
-    footer { margin-top:40px; font-size:13px; color:gray; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      padding: 20px;
+    }
+    .box {
+      background: white;
+      max-width: 400px;
+      margin: 60px auto;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      background: #7b3fe4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .hidden { display: none; }
   </style>
 </head>
+
 <body>
-  <div class="container">
 
-    <!-- HOME -->
-    <div id="home" class="box">
-      <h1>Karibu kwenye Alfonce Pi App</h1>
-      <p>App hii inafanya kazi ndani ya Pi Browser pekee</p>
-      <button onclick="loginWithPi()">Ingia kwa Pi</button>
-    </div>
+  <!-- HOME -->
+  <div id="home" class="box">
+    <h2>Karibu kwenye Alfonce Pi App</h2>
+    <p>App hii inafanya kazi ndani ya Pi Browser pekee</p>
+    <button onclick="loginWithPi()">Ingia kwa Pi</button>
+  </div>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard" class="box hidden">
-      <h2 id="username">Karibu</h2>
-      <p id="status">Hali ya Malipo: Hakuna bado</p>
-      <p id="balance">Balance: 0 Pi</p>
-      <button onclick="showPayment()">Tuma Pi</button>
-    </div>
-
-    <!-- PAYMENT -->
-    <div id="payment" class="box hidden">
-      <h3>Tuma Malipo ya Pi</h3>
-      <input type="number" id="amount" placeholder="Weka kiasi cha Pi" />
-      <button onclick="payWithPi()">Thibitisha Malipo</button>
-      <button onclick="back()">Rudi</button>
-    </div>
-
-    <footer>Alfonce Pi App • Testnet</footer>
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="box hidden">
+    <h2 id="username">Karibu</h2>
+    <p>Umefanikiwa kuingia ✔️</p>
   </div>
 
   <script>
     Pi.init({ version: "2.0", sandbox: true });
-    let currentUser = null;
 
     function loginWithPi() {
       Pi.authenticate(
-        ["username","payments","balance"],
-        function(auth){
-          currentUser = auth.user.username;
-          document.getElementById("username").innerText = "Karibu, " + currentUser;
-          getBalance();
+        ["username"],
+        function(auth) {
+          document.getElementById("username").innerText =
+            "Karibu, " + auth.user.username;
+
           document.getElementById("home").classList.add("hidden");
           document.getElementById("dashboard").classList.remove("hidden");
         },
-        function(error){ alert("Imeshindikana kuingia"); console.error(error); }
-      );
-    }
-
-    function getBalance() {
-      Pi.getUserBalance(
-        function(balance){
-          document.getElementById("balance").innerText = "Balance: " + balance + " Pi";
-        },
-        function(err){ console.error("Error fetching balance:", err); }
-      );
-    }
-
-    function showPayment() {
-      document.getElementById("dashboard").classList.add("hidden");
-      document.getElementById("payment").classList.remove("hidden");
-    }
-
-    function back() {
-      document.getElementById("payment").classList.add("hidden");
-      document.getElementById("dashboard").classList.remove("hidden");
-    }
-
-    function payWithPi() {
-      const amount = document.getElementById("amount").value;
-      if(!amount || amount<=0){ alert("Tafadhali weka kiasi sahihi cha Pi"); return; }
-
-      Pi.createPayment(
-        { amount: parseFloat(amount), memo:"Malipo kwa Alfonce Pi App", metadata:{app:"AlfoncePiApp"} },
-        {
-          onReadyForServerApproval: function(paymentId){ console.log("Ready for server approval:", paymentId); },
-          onReadyForServerCompletion: function(paymentId, txid){
-            document.getElementById("status").innerText = "Hali ya Malipo: Yamefanikiwa 🎉";
-            // Live update balance
-            getBalance();
-            document.getElementById("payment").classList.add("hidden");
-            document.getElementById("dashboard").classList.remove("hidden");
-          },
-          onCancel: function(){ alert("Malipo yameghairiwa"); },
-          onError: function(error){ alert("Hitilafu ya malipo"); console.error(error); }
+        function(error) {
+          alert("Imeshindikana kuingia");
+          console.error(error);
         }
       );
     }
   </script>
+
 </body>
 </html>
