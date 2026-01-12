@@ -1,99 +1,163 @@
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alfonce Payment App</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alfonce Pi App</title>
+
+  <!-- Pi Network SDK -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 0;
       text-align: center;
+    }
+    .container {
+      max-width: 420px;
+      margin: auto;
       padding: 20px;
-      background-color: #f2f2f2;
     }
-    h1 {
-      color: #333;
-    }
-    p {
-      color: #555;
+    h1, h2, h3 {
+      color: #7b3fe4;
     }
     button {
-      padding: 10px 20px;
-      margin: 10px;
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
       font-size: 16px;
-      border-radius: 8px;
-      border: none;
-      background-color: #4CAF50;
+      background: #7b3fe4;
       color: white;
+      border: none;
+      border-radius: 6px;
       cursor: pointer;
     }
     button:hover {
-      background-color: #45a049;
+      opacity: 0.9;
     }
-    #pi-balance {
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
       margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
+    }
+    .hidden {
+      display: none;
+    }
+    footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: gray;
     }
   </style>
 </head>
+
 <body>
-  <h1>Karibu Alfonce Pi App</h1>
-  <p>App hii inafanya kazi ndani ya Pi Browser</p>
+  <div class="container">
 
-  <!-- Buttons -->
-  <button onclick="loginPi()">Login na Pi</button>
-  <button onclick="payPi()">Pokea Pi</button>
+    <!-- HOME -->
+    <div id="home" class="box">
+      <h1>Welcome to Alfonce Pi App</h1>
+      <p>This app works only inside Pi Browser</p>
+      <button onclick="loginWithPi()">Login with Pi</button>
+    </div>
 
-  <!-- Display Pi Balance -->
-  <div id="pi-balance">Balance: 0 Pi</div>
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="box hidden">
+      <h2 id="username">Welcome</h2>
+      <p id="status">Payment Status: No payment yet</p>
 
-  <!-- Pi SDK -->
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+      <button onclick="showPayment()">Send Pi</button>
+    </div>
+
+    <!-- PAYMENT -->
+    <div id="payment" class="box hidden">
+      <h3>Send Pi Payment</h3>
+      <input type="number" id="amount" placeholder="Enter Pi amount" />
+      <button onclick="payWithPi()">Confirm Payment</button>
+      <button onclick="back()">Back</button>
+    </div>
+
+    <footer>
+      Alfonce Pi App • Testnet
+    </footer>
+  </div>
+
   <script>
-    // Initialize Pi SDK
-    Pi.init({ version: "2.0" });
+    // Initialize Pi SDK (Testnet)
+    Pi.init({ version: "2.0", sandbox: true });
 
-    // Login function
-    function loginPi() {
+    let currentUser = null;
+
+    // Login
+    function loginWithPi() {
       Pi.authenticate(
         ["username", "payments"],
-        function(auth) {
-          alert("Karibu, " + auth.user.username);
-          updateBalance(); // Update balance after login
+        function (auth) {
+          currentUser = auth.user.username;
+          document.getElementById("username").innerText =
+            "Welcome, " + currentUser;
+
+          document.getElementById("home").classList.add("hidden");
+          document.getElementById("dashboard").classList.remove("hidden");
         },
-        function(error) {
-          alert("Login failed: " + error);
+        function (error) {
+          alert("Login failed");
+          console.error(error);
         }
       );
     }
 
-    // Payment function
-    function payPi() {
-      Pi.requestPayment(
+    function showPayment() {
+      document.getElementById("dashboard").classList.add("hidden");
+      document.getElementById("payment").classList.remove("hidden");
+    }
+
+    function back() {
+      document.getElementById("payment").classList.add("hidden");
+      document.getElementById("dashboard").classList.remove("hidden");
+    }
+
+    // Payment
+    function payWithPi() {
+      const amount = document.getElementById("amount").value;
+
+      if (!amount || amount <= 0) {
+        alert("Please enter a valid Pi amount");
+        return;
+      }
+
+      Pi.createPayment(
         {
-          amount: 0.1,
-          currency: "Pi",
-          memo: "Payment kwa Alfonce App"
+          amount: parseFloat(amount),
+          memo: "Payment to Alfonce Pi App",
+          metadata: { app: "AlfoncePiApp" }
         },
-        function(success) {
-          alert("Payment success! Transaction ID: " + success.transaction_id);
-          updateBalance(); // Update balance after payment
-        },
-        function(error) {
-          alert("Payment failed: " + error);
-        }
-      );
-    }
-
-    // Function to update Pi balance display
-    function updateBalance() {
-      Pi.getUserBalance(
-        function(balance) {
-          document.getElementById("pi-balance").innerText = "Balance: " + balance + " Pi";
-        },
-        function(error) {
-          console.log("Failed to get balance: " + error);
+        {
+          onReadyForServerApproval: function (paymentId) {
+            console.log("Ready for server approval:", paymentId);
+          },
+          onReadyForServerCompletion: function (paymentId, txid) {
+            document.getElementById("status").innerText =
+              "Payment Status: Successful 🎉";
+            back();
+          },
+          onCancel: function () {
+            alert("Payment cancelled");
+          },
+          onError: function (error) {
+            alert("Payment error");
+            console.error(error);
+          }
         }
       );
     }
